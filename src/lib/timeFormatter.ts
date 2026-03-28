@@ -1,104 +1,72 @@
 /**
  * Core time-formatting logic for the Block Time Clock.
  *
- * Converts standard Date objects into 15-minute block representations.
- * Pure functions with no side effects — fully testable without DOM or React.
+ * Block duration and day start time are configurable.
+ * Pure functions with no side effects.
  */
 
-/** A block-based representation of a point in time. */
+const MINUTES_IN_DAY = 1440;
+
 export interface BlockRepresentation {
-  /** Hour in 24h format (0–23) */
-  hour: number;
-  /** Block within the hour (1–4) */
-  blockNumber: number;
-  /** Human-readable label, e.g. "2:15 PM" or "14:15" */
+  globalBlock: number;
+  totalBlocks: number;
+  /** 24h label for block start, e.g. "13:30" */
   blockLabel: string;
-  /** Start minute of the block: 0, 15, 30, or 45 */
+  /** Absolute start minute of the day (0–1439) */
   blockStartMinute: number;
 }
 
-/** Display format for time labels. */
-export type TimeFormat = '12h' | '24h';
-
-/** Convert a Date to its BlockRepresentation. */
-export function dateToBlock(date: Date, format: TimeFormat): BlockRepresentation {
-  const hour = date.getHours();
-  const minute = date.getMinutes();
-  const blockNumber = minuteToBlockNumber(minute);
-  const blockStartMinute = blockNumberToStartMinute(blockNumber);
-  const blockLabel = formatBlockLabel(hour, blockStartMinute, format);
-  return { hour, blockNumber, blockLabel, blockStartMinute };
+export interface BlockConfig {
+  blockMinutes: number;
+  /** Minute of day when block 1 starts (0–1439). Default 0. */
+  startMinute: number;
 }
 
-/** Format a block label string given hour, block start minute, and format. */
-export function formatBlockLabel(hour: number, blockStartMinute: number, format: TimeFormat): string {
-  const mm = blockStartMinute.toString().padStart(2, '0');
-  if (format === '24h') {
-    return `${hour}:${mm}`;
-  }
-  const period = hour < 12 ? 'AM' : 'PM';
-  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:${mm} ${period}`;
+function formatMinute(minuteOfDay: number): string {
+  const wrapped = ((minuteOfDay % MINUTES_IN_DAY) + MINUTES_IN_DAY) % MINUTES_IN_DAY;
+  const h = Math.floor(wrapped / 60);
+  const m = wrapped % 60;
+  return `${h}:${m.toString().padStart(2, '0')}`;
 }
 
-/** Calculate progress (0–100) within the current 15-minute block. */
-export function blockProgress(date: Date): number {
-  const minute = date.getMinutes();
+export function totalBlocks(blockMinutes: number): number {
+  return Math.ceil(MINUTES_IN_DAY / blockMinutes);
+}
+
+export function dateToBlock(date: Date, config: BlockConfig): BlockRepresentation {
+  const minuteOfDay = date.getHours() * 60 + date.getMinutes();
+  const offset = ((minuteOfDay - config.startMinute) % MINUTES_IN_DAY + MINUTES_IN_DAY) % MINUTES_IN_DAY;
+  const total = totalBlocks(config.blockMinutes);
+  const globalBlock = Math.min(Math.floor(offset / config.blockMinutes) + 1, total);
+  const absStart = (config.startMinute + (globalBlock - 1) * config.blockMinutes) % MINUTES_IN_DAY;
+  return {
+    globalBlock,
+    totalBlocks: total,
+    blockLabel: formatMinute(absStart),
+    blockStartMinute: absStart,
+  };
+}
+
+export function blockProgress(date: Date, config: BlockConfig): number {
+  const minuteOfDay = date.getHours() * 60 + date.getMinutes();
   const seconds = date.getSeconds();
-  const raw = ((minute % 15) * 60 + seconds) / 900 * 100;
-  return Math.min(100, Math.max(0, raw));
+  const offset = ((minuteOfDay - config.startMinute) % MINUTES_IN_DAY + MINUTES_IN_DAY) % MINUTES_IN_DAY;
+  const elapsed = (offset % config.blockMinutes) * 60 + seconds;
+  const blockSeconds = config.blockMinutes * 60;
+  return Math.min(100, Math.max(0, (elapsed / blockSeconds) * 100));
 }
 
-/** Parse a block label back to a Date (for round-trip validation). */
-export function parseBlockLabel(label: string, format: TimeFormat): Date {
-  const date = new Date();
-  date.setSeconds(0, 0);
-
-  if (format === '24h') {
-    const [hourStr, minuteStr] = label.split(':');
-    date.setHours(parseInt(hourStr, 10), parseInt(minuteStr, 10));
-    return date;
-  }
-
-  // 12h format: "H:MM AM/PM"
-  const match = label.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) {
-    return new Date(0);
-  }
-
-  let hour = parseInt(match[1], 10);
-  const minute = parseInt(match[2], 10);
-  const period = match[3].toUpperCase();
-
-  if (period === 'AM' && hour === 12) {
-    hour = 0;
-  } else if (period === 'PM' && hour !== 12) {
-    hour += 12;
-  }
-
-  date.setHours(hour, minute);
-  return date;
-}
-
-/** Get the block number (1–4) for a given minute value (0–59). */
-export function minuteToBlockNumber(minute: number): number {
-  return Math.floor(minute / 15) + 1;
-}
-
-/** Get the block start minute for a given block number (1–4). */
-export function blockNumberToStartMinute(blockNumber: number): number {
-  return (blockNumber - 1) * 15;
-}
-
-/** Generate all 96 block representations for a full 24-hour day. */
-export function generateDayBlocks(format: TimeFormat): BlockRepresentation[] {
+export function generateDayBlocks(config: BlockConfig): BlockRepresentation[] {
+  const total = totalBlocks(config.blockMinutes);
   const blocks: BlockRepresentation[] = [];
-  for (let hour = 0; hour <= 23; hour++) {
-    for (let blockNumber = 1; blockNumber <= 4; blockNumber++) {
-      const blockStartMinute = blockNumberToStartMinute(blockNumber);
-      const blockLabel = formatBlockLabel(hour, blockStartMinute, format);
-      blocks.push({ hour, blockNumber, blockLabel, blockStartMinute });
-    }
+  for (let i = 0; i < total; i++) {
+    const absStart = (config.startMinute + i * config.blockMinutes) % MINUTES_IN_DAY;
+    blocks.push({
+      globalBlock: i + 1,
+      totalBlocks: total,
+      blockLabel: formatMinute(absStart),
+      blockStartMinute: absStart,
+    });
   }
   return blocks;
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { dateToBlock, blockProgress } from '../lib/timeFormatter';
-import type { TimeFormat, BlockRepresentation } from '../lib/timeFormatter';
+import type { BlockRepresentation, BlockConfig } from '../lib/timeFormatter';
 
 interface BlockTimeState {
   currentBlock: BlockRepresentation;
@@ -8,28 +8,23 @@ interface BlockTimeState {
   currentDate: Date;
 }
 
-function computeState(format: TimeFormat): BlockTimeState {
+function computeState(config: BlockConfig): BlockTimeState {
   const now = new Date();
   return {
-    currentBlock: dateToBlock(now, format),
-    progress: blockProgress(now),
+    currentBlock: dateToBlock(now, config),
+    progress: blockProgress(now, config),
     currentDate: now,
   };
 }
 
-export function useBlockTime(format: TimeFormat): BlockTimeState {
-  const [state, setState] = useState<BlockTimeState>(() => computeState(format));
+export function useBlockTime(config: BlockConfig): BlockTimeState {
+  const [state, setState] = useState<BlockTimeState>(() => computeState(config));
 
   useEffect(() => {
-    // Recompute immediately when format changes
-    setState(computeState(format));
-
-    const id = setInterval(() => {
-      setState(computeState(format));
-    }, 1000);
-
+    setState(computeState(config));
+    const id = setInterval(() => setState(computeState(config)), 1000);
     return () => clearInterval(id);
-  }, [format]);
+  }, [config.blockMinutes, config.startMinute]);
 
   return state;
 }

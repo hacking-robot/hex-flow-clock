@@ -3,15 +3,13 @@ import Typography from '@mui/material/Typography';
 import { ProgressIndicator } from './ProgressIndicator';
 
 interface ClockDisplayProps {
+  globalBlock: number;
+  totalBlocks: number;
   blockLabel: string;
-  blockNumber: number;
-  hour: number;
   progress: number;
 }
 
-export function ClockDisplay({ blockLabel, blockNumber, hour, progress }: ClockDisplayProps) {
-  const globalBlock = hour * 4 + blockNumber;
-
+export function ClockDisplay({ globalBlock, totalBlocks, blockLabel, progress }: ClockDisplayProps) {
   return (
     <Box>
       <Typography
@@ -24,7 +22,7 @@ export function ClockDisplay({ blockLabel, blockNumber, hour, progress }: ClockD
           component="span"
           sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' }, fontWeight: 400, color: 'text.secondary', ml: 1 }}
         >
-          / 96
+          / {totalBlocks}
         </Typography>
       </Typography>
       <Typography
@@ -38,7 +36,7 @@ export function ClockDisplay({ blockLabel, blockNumber, hour, progress }: ClockD
         <ProgressIndicator progress={progress} />
       </Box>
       <Box aria-live="polite" sx={{ position: 'absolute', left: -9999, width: 1, height: 1, overflow: 'hidden' }}>
-        Block {globalBlock} of 96, {blockLabel}
+        Block {globalBlock} of {totalBlocks}, {blockLabel}
       </Box>
     </Box>
   );

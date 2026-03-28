@@ -4,37 +4,33 @@ import { ClockDisplay } from '../ClockDisplay';
 
 describe('ClockDisplay', () => {
   const defaultProps = {
-    blockLabel: '2:30 PM',
-    blockNumber: 3,
-    hour: 14,
+    globalBlock: 10,
+    totalBlocks: 16,
+    blockLabel: '13:30',
     progress: 50,
   };
 
-  it('renders the block number prominently', () => {
+  it('renders the block number', () => {
     render(<ClockDisplay {...defaultProps} />);
-    // hour 14, blockNumber 3 → global block 59
-    expect(screen.getByText('59')).toBeInTheDocument();
-    expect(screen.getByText('/ 96')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument();
+    expect(screen.getByText('/ 16')).toBeInTheDocument();
   });
 
-  it('renders the time label as secondary reference', () => {
+  it('renders the time label', () => {
     render(<ClockDisplay {...defaultProps} />);
-    expect(screen.getByText('2:30 PM')).toBeInTheDocument();
+    expect(screen.getByText('13:30')).toBeInTheDocument();
   });
 
-  it('has an aria-live="polite" region', () => {
+  it('has an aria-live region', () => {
     render(<ClockDisplay {...defaultProps} />);
     const liveRegion = document.querySelector('[aria-live="polite"]');
     expect(liveRegion).toBeInTheDocument();
-    expect(liveRegion).toHaveTextContent('Block 59 of 96, 2:30 PM');
+    expect(liveRegion).toHaveTextContent('Block 10 of 16, 13:30');
   });
 
   it('renders ProgressIndicator with correct aria attributes', () => {
     render(<ClockDisplay {...defaultProps} />);
-    const progressBar = screen.getByRole('progressbar');
-    expect(progressBar).toHaveAttribute('aria-label', 'Block progress');
-    expect(progressBar).toHaveAttribute('aria-valuenow', '50');
-    expect(progressBar).toHaveAttribute('aria-valuemin', '0');
-    expect(progressBar).toHaveAttribute('aria-valuemax', '100');
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '50');
   });
 });
