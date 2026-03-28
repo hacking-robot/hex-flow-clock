@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { dateToBlock, blockProgress } from '../lib/timeFormatter';
+import { dateToBlock, blockProgress, minutesInBlock } from '../lib/timeFormatter';
 import type { BlockRepresentation, BlockConfig } from '../lib/timeFormatter';
 
 interface BlockTimeState {
   currentBlock: BlockRepresentation;
   progress: number;
+  minutesElapsed: number;
   currentDate: Date;
 }
 
@@ -13,6 +14,7 @@ function computeState(config: BlockConfig): BlockTimeState {
   return {
     currentBlock: dateToBlock(now, config),
     progress: blockProgress(now, config),
+    minutesElapsed: minutesInBlock(now, config),
     currentDate: now,
   };
 }

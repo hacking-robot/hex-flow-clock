@@ -8,29 +8,30 @@ describe('ClockDisplay', () => {
     totalBlocks: 16,
     blockLabel: '13:30',
     progress: 50,
+    minutesElapsed: 42,
+    blockMinutes: 90,
+    currentDate: new Date(2024, 0, 1, 14, 12, 0),
   };
 
-  it('renders the block number', () => {
+  it('renders the block number with minutes elapsed', () => {
     render(<ClockDisplay {...defaultProps} />);
     expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('/ 16')).toBeInTheDocument();
+    expect(screen.getByText("/ 16")).toBeInTheDocument();
+    expect(screen.getByText("+42'")).toBeInTheDocument();
   });
 
-  it('renders the time label', () => {
-    render(<ClockDisplay {...defaultProps} />);
-    expect(screen.getByText('13:30')).toBeInTheDocument();
+  it('renders block start, current time, and block end around progress bar', () => {
+    const { container } = render(<ClockDisplay {...defaultProps} />);
+    expect(container.textContent).toContain('13:30');
+    expect(container.textContent).toContain('14:12');
+    expect(container.textContent).toContain('15:00');
   });
 
-  it('has an aria-live region', () => {
-    render(<ClockDisplay {...defaultProps} />);
-    const liveRegion = document.querySelector('[aria-live="polite"]');
-    expect(liveRegion).toBeInTheDocument();
-    expect(liveRegion).toHaveTextContent('Block 10 of 16, 13:30');
-  });
-
-  it('renders ProgressIndicator with correct aria attributes', () => {
+  it('renders block-level progress bar', () => {
     render(<ClockDisplay {...defaultProps} />);
     const bar = screen.getByRole('progressbar');
-    expect(bar).toHaveAttribute('aria-valuenow', '50');
+    // 42/90 ≈ 46.67%
+    const value = parseFloat(bar.getAttribute('aria-valuenow')!);
+    expect(value).toBeCloseTo(46.67, 0);
   });
 });

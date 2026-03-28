@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import { useBlockTime } from './hooks/useBlockTime';
 import { useBlockDuration } from './hooks/useBlockDuration';
 import { useStartTime } from './hooks/useStartTime';
+import { useEndTime } from './hooks/useEndTime';
 import { ClockDisplay } from './components/ClockDisplay';
 import { DayOverview } from './components/DayOverview';
 import { BlockDurationSetting } from './components/BlockDurationSetting';
@@ -23,11 +24,12 @@ const theme = createTheme({
 export default function App() {
   const [blockMinutes, setBlockMinutes] = useBlockDuration();
   const [startMinute, setStartMinute] = useStartTime();
+  const [endMinute, setEndMinute] = useEndTime();
   const config: BlockConfig = useMemo(
     () => ({ blockMinutes, startMinute }),
     [blockMinutes, startMinute],
   );
-  const { currentBlock, progress } = useBlockTime(config);
+  const { currentBlock, progress, minutesElapsed, currentDate } = useBlockTime(config);
 
   return (
     <ThemeProvider theme={theme}>
@@ -39,13 +41,18 @@ export default function App() {
             totalBlocks={currentBlock.totalBlocks}
             blockLabel={currentBlock.blockLabel}
             progress={progress}
+            minutesElapsed={minutesElapsed}
+            blockMinutes={blockMinutes}
+            currentDate={currentDate}
           />
-          <DayOverview currentBlock={currentBlock} config={config} />
+          <DayOverview currentBlock={currentBlock} config={config} awakeStart={startMinute} awakeEnd={endMinute} />
           <BlockDurationSetting
             blockMinutes={blockMinutes}
             onBlockMinutesChange={setBlockMinutes}
             startMinute={startMinute}
             onStartMinuteChange={setStartMinute}
+            endMinute={endMinute}
+            onEndMinuteChange={setEndMinute}
           />
         </Box>
       </Container>

@@ -8,6 +8,8 @@ interface BlockDurationSettingProps {
   onBlockMinutesChange: (minutes: number) => void;
   startMinute: number;
   onStartMinuteChange: (minute: number) => void;
+  endMinute: number;
+  onEndMinuteChange: (minute: number) => void;
 }
 
 function formatTime(minuteOfDay: number): string {
@@ -21,7 +23,7 @@ const durationMarks = [15, 60, 120, 240].map((v) => ({
   label: `${v}`,
 }));
 
-const startMarks = [0, 6, 12, 18].map((h) => ({
+const hourMarks = [0, 6, 12, 18].map((h) => ({
   value: h * 60,
   label: `${h}:00`,
 }));
@@ -29,13 +31,14 @@ const startMarks = [0, 6, 12, 18].map((h) => ({
 export function BlockDurationSetting({
   blockMinutes, onBlockMinutesChange,
   startMinute, onStartMinuteChange,
+  endMinute, onEndMinuteChange,
 }: BlockDurationSettingProps) {
   const total = totalBlocks(blockMinutes);
 
   return (
     <Box sx={{ width: '100%' }}>
       <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-        {blockMinutes} min/block · {total} blocks · starts {formatTime(startMinute)}
+        {blockMinutes} min/block · {total} blocks · awake {formatTime(startMinute)}–{formatTime(endMinute)}
       </Typography>
 
       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
@@ -52,17 +55,32 @@ export function BlockDurationSetting({
       />
 
       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-        Day starts at
+        Wake up
       </Typography>
       <Slider
         value={startMinute}
         onChange={(_, v) => onStartMinuteChange(v as number)}
         min={0} max={1380} step={30}
-        marks={startMarks}
+        marks={hourMarks}
         size="small"
         valueLabelDisplay="auto"
         valueLabelFormat={formatTime}
-        aria-label="Day start time"
+        aria-label="Wake up time"
+        sx={{ mb: 2 }}
+      />
+
+      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+        Sleep
+      </Typography>
+      <Slider
+        value={endMinute}
+        onChange={(_, v) => onEndMinuteChange(v as number)}
+        min={0} max={1380} step={30}
+        marks={hourMarks}
+        size="small"
+        valueLabelDisplay="auto"
+        valueLabelFormat={formatTime}
+        aria-label="Sleep time"
       />
     </Box>
   );

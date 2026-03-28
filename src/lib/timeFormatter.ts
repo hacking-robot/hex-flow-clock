@@ -70,3 +70,21 @@ export function generateDayBlocks(config: BlockConfig): BlockRepresentation[] {
   }
   return blocks;
 }
+
+/** Minutes elapsed within the current block. */
+export function minutesInBlock(date: Date, config: BlockConfig): number {
+  const minuteOfDay = date.getHours() * 60 + date.getMinutes();
+  const offset = ((minuteOfDay - config.startMinute) % MINUTES_IN_DAY + MINUTES_IN_DAY) % MINUTES_IN_DAY;
+  return offset % config.blockMinutes;
+}
+
+/** Check if a block falls within the awake window (startMinute of day to endMinute of day). */
+export function isAwake(block: BlockRepresentation, awakeStart: number, awakeEnd: number): boolean {
+  const blockStart = block.blockStartMinute;
+  if (awakeStart <= awakeEnd) {
+    // Normal range, e.g. 7:00–23:00
+    return blockStart >= awakeStart && blockStart < awakeEnd;
+  }
+  // Wraps midnight, e.g. 22:00–6:00
+  return blockStart >= awakeStart || blockStart < awakeEnd;
+}

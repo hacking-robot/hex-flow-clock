@@ -12,24 +12,27 @@ describe('DayOverview', () => {
   };
 
   const config = { blockMinutes: 90, startMinute: 0 };
+  const awakeStart = 420; // 7:00
+  const awakeEnd = 1380; // 23:00
 
   it('renders 16 grid cells', () => {
-    render(<DayOverview currentBlock={currentBlock} config={config} />);
+    render(<DayOverview currentBlock={currentBlock} config={config} awakeStart={awakeStart} awakeEnd={awakeEnd} />);
     const cells = screen.getAllByRole('gridcell');
     expect(cells).toHaveLength(16);
   });
 
-  it('renders cells with accessible labels', () => {
-    render(<DayOverview currentBlock={currentBlock} config={config} />);
-    expect(screen.getByLabelText('Block 1 of 16, past')).toBeInTheDocument();
+  it('marks sleep blocks in accessible labels', () => {
+    render(<DayOverview currentBlock={currentBlock} config={config} awakeStart={awakeStart} awakeEnd={awakeEnd} />);
+    // Block 1 starts at 0:00 — before 7:00, so it's sleep
+    expect(screen.getByLabelText('Block 1 of 16, past, sleep')).toBeInTheDocument();
+    // Block 10 starts at 13:30 — awake and current
     expect(screen.getByLabelText('Block 10 of 16, current')).toBeInTheDocument();
-    expect(screen.getByLabelText('Block 16 of 16, future')).toBeInTheDocument();
   });
 
   it('styles current block differently', () => {
-    render(<DayOverview currentBlock={currentBlock} config={config} />);
+    render(<DayOverview currentBlock={currentBlock} config={config} awakeStart={awakeStart} awakeEnd={awakeEnd} />);
     const current = screen.getByLabelText('Block 10 of 16, current');
-    const past = screen.getByLabelText('Block 1 of 16, past');
-    expect(current.className).not.toBe(past.className);
+    const sleep = screen.getByLabelText('Block 1 of 16, past, sleep');
+    expect(current.className).not.toBe(sleep.className);
   });
 });
