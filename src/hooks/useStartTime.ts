@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 
 const STORAGE_KEY = 'blockTimeClock.startMinute';
-const DEFAULT_START = 0; // midnight
+const DEFAULT_START = 420; // 7:00
 
 function readStart(): number {
   try {

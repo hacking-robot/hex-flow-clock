@@ -17,11 +17,13 @@ interface DayOverviewProps {
   awakeEnd: number;
 }
 
-const statusStyles = {
-  past: { bgcolor: 'grey.300', color: 'grey.600' },
-  current: { bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 700 },
-  future: { bgcolor: 'grey.100', color: 'text.secondary' },
-} as const;
+function blockColor(index: number, total: number, awake: boolean, status: string): { bg: string; fg: string } {
+  const hue = (index / total) * 360;
+  if (status === 'current') return { bg: `hsl(${hue}, 70%, 45%)`, fg: '#fff' };
+  if (!awake) return { bg: `hsl(${hue}, 20%, 30%)`, fg: `hsl(${hue}, 30%, 75%)` };
+  if (status === 'past') return { bg: `hsl(${hue}, 50%, 75%)`, fg: `hsl(${hue}, 40%, 30%)` };
+  return { bg: `hsl(${hue}, 55%, 88%)`, fg: `hsl(${hue}, 40%, 40%)` };
+}
 
 export function DayOverview({ currentBlock, config, awakeStart, awakeEnd }: DayOverviewProps) {
   const blocks = generateDayBlocks(config);
@@ -34,30 +36,33 @@ export function DayOverview({ currentBlock, config, awakeStart, awakeEnd }: DayO
       aria-label={`Day overview showing all ${total} blocks`}
       sx={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 0.5 }}
     >
-      {blocks.map((block) => {
+      {blocks.map((block, i) => {
         const status = classifyBlock(block, currentBlock);
         const awake = isAwake(block, awakeStart, awakeEnd);
+        const { bg, fg } = blockColor(i, total, awake, status);
         return (
           <Box
             key={block.globalBlock}
             role="gridcell"
             aria-label={`Block ${block.globalBlock} of ${total}, ${status}${awake ? '' : ', sleep'}`}
             sx={{
-              ...statusStyles[status],
-              ...(!awake && status !== 'current' && { opacity: 0.35 }),
+              bgcolor: bg,
+              color: fg,
               borderRadius: 0.5,
               textAlign: 'center',
-              fontSize: '0.6rem',
+              fontSize: '0.7rem',
               py: 0.4,
               minHeight: 24,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
+              fontWeight: status === 'current' ? 700 : 400,
+              border: status === 'current' ? '2px solid #fff' : 'none',
             }}
           >
-            <Box sx={{ fontWeight: status === 'current' ? 700 : 400 }}>{block.globalBlock}</Box>
-            <Box sx={{ fontSize: '0.5rem', opacity: 0.7 }}>{block.blockLabel}</Box>
+            <Box>{block.globalBlock}</Box>
+            <Box sx={{ fontSize: '0.6rem', opacity: 0.8 }}>{block.blockLabel}</Box>
           </Box>
         );
       })}

@@ -6,10 +6,11 @@ import Box from '@mui/material/Box';
 import { useBlockTime } from './hooks/useBlockTime';
 import { useBlockDuration } from './hooks/useBlockDuration';
 import { useStartTime } from './hooks/useStartTime';
-import { useEndTime } from './hooks/useEndTime';
+import { useSleepDuration } from './hooks/useSleepDuration';
 import { ClockDisplay } from './components/ClockDisplay';
 import { DayOverview } from './components/DayOverview';
 import { BlockDurationSetting } from './components/BlockDurationSetting';
+import { TimeConverter } from './components/TimeConverter';
 import type { BlockConfig } from './lib/timeFormatter';
 
 const theme = createTheme({
@@ -24,7 +25,8 @@ const theme = createTheme({
 export default function App() {
   const [blockMinutes, setBlockMinutes] = useBlockDuration();
   const [startMinute, setStartMinute] = useStartTime();
-  const [endMinute, setEndMinute] = useEndTime();
+  const [sleepHours, setSleepHours] = useSleepDuration();
+  const awakeEnd = (startMinute + (24 - sleepHours) * 60) % 1440;
   const config: BlockConfig = useMemo(
     () => ({ blockMinutes, startMinute }),
     [blockMinutes, startMinute],
@@ -45,15 +47,17 @@ export default function App() {
             blockMinutes={blockMinutes}
             currentDate={currentDate}
           />
-          <DayOverview currentBlock={currentBlock} config={config} awakeStart={startMinute} awakeEnd={endMinute} />
+          <DayOverview currentBlock={currentBlock} config={config} awakeStart={startMinute} awakeEnd={awakeEnd} />
           <BlockDurationSetting
             blockMinutes={blockMinutes}
             onBlockMinutesChange={setBlockMinutes}
             startMinute={startMinute}
             onStartMinuteChange={setStartMinute}
-            endMinute={endMinute}
-            onEndMinuteChange={setEndMinute}
+            sleepHours={sleepHours}
+            onSleepHoursChange={setSleepHours}
+            awakeEnd={awakeEnd}
           />
+          <TimeConverter config={config} />
         </Box>
       </Container>
     </ThemeProvider>
