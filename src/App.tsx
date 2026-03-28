@@ -7,6 +7,7 @@ import Collapse from '@mui/material/Collapse';
 import { useHexTime } from './hooks/useBlockTime';
 import { ClockDisplay } from './components/ClockDisplay';
 import { DayOverview } from './components/DayOverview';
+import { ConversionExplainer } from './components/ConversionExplainer';
 import { TimeConverter } from './components/TimeConverter';
 
 const theme = createTheme({
@@ -92,6 +93,18 @@ export default function App() {
             <Collapse in={showDetails} sx={{ width: '100%' }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: { xs: 3, sm: 4 } }}>
                 <DayOverview current={current} />
+                <Box
+                  sx={{
+                    width: '100%',
+                    p: { xs: 2, sm: 3 },
+                    borderRadius: 3,
+                    background: 'rgba(255,255,255,0.03)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >
+                  <ConversionExplainer current={current} currentDate={currentDate} />
+                </Box>
                 <Box
                   sx={{
                     width: '100%',
