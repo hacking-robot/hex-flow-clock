@@ -1,37 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { ClockDisplay } from '../ClockDisplay';
+import type { BlockState } from '../../lib/timeFormatter';
 
 describe('ClockDisplay', () => {
-  const defaultProps = {
-    globalBlock: 10,
-    totalBlocks: 16,
-    blockLabel: '13:30',
-    progress: 50,
-    minutesElapsed: 42,
-    blockMinutes: 90,
-    currentDate: new Date(2024, 0, 1, 14, 12, 0),
+  const current: BlockState = {
+    block: 10, subBlock: 3, totalBlocks: 16, subBlocksPerBlock: 6,
+    blockStartMinute: 810, blockLabel: '13:30', minutesInSubBlock: 7,
   };
 
-  it('renders the block number with minutes elapsed', () => {
-    render(<ClockDisplay {...defaultProps} />);
+  it('renders block.subBlock', () => {
+    render(<ClockDisplay current={current} progress={47} currentDate={new Date(2024, 0, 1, 14, 7)} subBlockMinutes={15} />);
     expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText("/ 16")).toBeInTheDocument();
-    expect(screen.getByText("+42'")).toBeInTheDocument();
+    expect(screen.getByText('.3')).toBeInTheDocument();
   });
 
-  it('renders block start, current time, and block end around progress bar', () => {
-    const { container } = render(<ClockDisplay {...defaultProps} />);
-    expect(container.textContent).toContain('13:30');
-    expect(container.textContent).toContain('14:12');
-    expect(container.textContent).toContain('15:00');
-  });
-
-  it('renders block-level progress bar', () => {
-    render(<ClockDisplay {...defaultProps} />);
-    const bar = screen.getByRole('progressbar');
-    // 42/90 ≈ 46.67%
-    const value = parseFloat(bar.getAttribute('aria-valuenow')!);
-    expect(value).toBeCloseTo(46.67, 0);
+  it('renders progress bar', () => {
+    render(<ClockDisplay current={current} progress={47} currentDate={new Date(2024, 0, 1, 14, 7)} subBlockMinutes={15} />);
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 });

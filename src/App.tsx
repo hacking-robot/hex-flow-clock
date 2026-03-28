@@ -5,8 +5,7 @@ import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import { useBlockTime } from './hooks/useBlockTime';
 import { useBlockDuration } from './hooks/useBlockDuration';
-import { useStartTime } from './hooks/useStartTime';
-import { useSleepDuration } from './hooks/useSleepDuration';
+import { useSubBlockDuration } from './hooks/useSubBlockDuration';
 import { ClockDisplay } from './components/ClockDisplay';
 import { DayOverview } from './components/DayOverview';
 import { BlockDurationSetting } from './components/BlockDurationSetting';
@@ -24,14 +23,12 @@ const theme = createTheme({
 
 export default function App() {
   const [blockMinutes, setBlockMinutes] = useBlockDuration();
-  const [startMinute, setStartMinute] = useStartTime();
-  const [sleepHours, setSleepHours] = useSleepDuration();
-  const awakeEnd = (startMinute + (24 - sleepHours) * 60) % 1440;
+  const [subBlockMinutes, setSubBlockMinutes] = useSubBlockDuration();
   const config: BlockConfig = useMemo(
-    () => ({ blockMinutes, startMinute }),
-    [blockMinutes, startMinute],
+    () => ({ blockMinutes, subBlockMinutes }),
+    [blockMinutes, subBlockMinutes],
   );
-  const { currentBlock, progress, minutesElapsed, currentDate } = useBlockTime(config);
+  const { current, progress, currentDate } = useBlockTime(config);
 
   return (
     <ThemeProvider theme={theme}>
@@ -39,23 +36,17 @@ export default function App() {
       <Container maxWidth="sm" sx={{ py: { xs: 2, sm: 4 }, px: { xs: 1, sm: 3 } }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: { xs: 2, sm: 3 } }}>
           <ClockDisplay
-            globalBlock={currentBlock.globalBlock}
-            totalBlocks={currentBlock.totalBlocks}
-            blockLabel={currentBlock.blockLabel}
+            current={current}
             progress={progress}
-            minutesElapsed={minutesElapsed}
-            blockMinutes={blockMinutes}
             currentDate={currentDate}
+            subBlockMinutes={subBlockMinutes}
           />
-          <DayOverview currentBlock={currentBlock} config={config} awakeStart={startMinute} awakeEnd={awakeEnd} />
+          <DayOverview current={current} config={config} />
           <BlockDurationSetting
             blockMinutes={blockMinutes}
             onBlockMinutesChange={setBlockMinutes}
-            startMinute={startMinute}
-            onStartMinuteChange={setStartMinute}
-            sleepHours={sleepHours}
-            onSleepHoursChange={setSleepHours}
-            awakeEnd={awakeEnd}
+            subBlockMinutes={subBlockMinutes}
+            onSubBlockMinutesChange={setSubBlockMinutes}
           />
           <TimeConverter config={config} />
         </Box>

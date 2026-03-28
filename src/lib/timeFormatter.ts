@@ -1,90 +1,96 @@
 /**
  * Core time-formatting logic for the Block Time Clock.
  *
- * Block duration and day start time are configurable.
- * Pure functions with no side effects.
+ * Two-level system: blocks (default 90min) divided into sub-blocks (default 15min).
+ * Day always starts at 0:00.
  */
 
 const MINUTES_IN_DAY = 1440;
 
-export interface BlockRepresentation {
-  globalBlock: number;
-  totalBlocks: number;
-  /** 24h label for block start, e.g. "13:30" */
-  blockLabel: string;
-  /** Absolute start minute of the day (0–1439) */
-  blockStartMinute: number;
-}
-
 export interface BlockConfig {
-  blockMinutes: number;
-  /** Minute of day when block 1 starts (0–1439). Default 0. */
-  startMinute: number;
+  blockMinutes: number;   // e.g. 90
+  subBlockMinutes: number; // e.g. 15
 }
 
-function formatMinute(minuteOfDay: number): string {
-  const wrapped = ((minuteOfDay % MINUTES_IN_DAY) + MINUTES_IN_DAY) % MINUTES_IN_DAY;
-  const h = Math.floor(wrapped / 60);
-  const m = wrapped % 60;
-  return `${h}:${m.toString().padStart(2, '0')}`;
+export interface BlockState {
+  block: number;           // 1-based block index
+  subBlock: number;        // 1-based sub-block within block
+  totalBlocks: number;
+  subBlocksPerBlock: number;
+  blockStartMinute: number; // absolute minute of day
+  blockLabel: string;       // e.g. "13:30"
+  minutesInSubBlock: number;
+}
+
+function formatMin(m: number): string {
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${h}:${mm.toString().padStart(2, '0')}`;
 }
 
 export function totalBlocks(blockMinutes: number): number {
   return Math.ceil(MINUTES_IN_DAY / blockMinutes);
 }
 
-export function dateToBlock(date: Date, config: BlockConfig): BlockRepresentation {
+export function subBlocksPerBlock(config: BlockConfig): number {
+  return Math.ceil(config.blockMinutes / config.subBlockMinutes);
+}
+
+export function dateToBlock(date: Date, config: BlockConfig): BlockState {
   const minuteOfDay = date.getHours() * 60 + date.getMinutes();
-  const offset = ((minuteOfDay - config.startMinute) % MINUTES_IN_DAY + MINUTES_IN_DAY) % MINUTES_IN_DAY;
   const total = totalBlocks(config.blockMinutes);
-  const globalBlock = Math.min(Math.floor(offset / config.blockMinutes) + 1, total);
-  const absStart = (config.startMinute + (globalBlock - 1) * config.blockMinutes) % MINUTES_IN_DAY;
+  const subs = subBlocksPerBlock(config);
+  const block = Math.min(Math.floor(minuteOfDay / config.blockMinutes) + 1, total);
+  const blockStart = (block - 1) * config.blockMinutes;
+  const inBlock = minuteOfDay - blockStart;
+  const subBlock = Math.min(Math.floor(inBlock / config.subBlockMinutes) + 1, subs);
+  const subStart = blockStart + (subBlock - 1) * config.subBlockMinutes;
+  const minutesInSub = minuteOfDay - subStart;
   return {
-    globalBlock,
+    block,
+    subBlock,
     totalBlocks: total,
-    blockLabel: formatMinute(absStart),
-    blockStartMinute: absStart,
+    subBlocksPerBlock: subs,
+    blockStartMinute: blockStart,
+    blockLabel: formatMin(blockStart),
+    minutesInSubBlock: minutesInSub,
   };
 }
 
-export function blockProgress(date: Date, config: BlockConfig): number {
-  const minuteOfDay = date.getHours() * 60 + date.getMinutes();
-  const seconds = date.getSeconds();
-  const offset = ((minuteOfDay - config.startMinute) % MINUTES_IN_DAY + MINUTES_IN_DAY) % MINUTES_IN_DAY;
-  const elapsed = (offset % config.blockMinutes) * 60 + seconds;
-  const blockSeconds = config.blockMinutes * 60;
-  return Math.min(100, Math.max(0, (elapsed / blockSeconds) * 100));
+export function subBlockProgress(date: Date, config: BlockConfig): number {
+  const state = dateToBlock(date, config);
+  const elapsed = state.minutesInSubBlock * 60 + date.getSeconds();
+  const total = config.subBlockMinutes * 60;
+  return Math.min(100, Math.max(0, (elapsed / total) * 100));
 }
 
-export function generateDayBlocks(config: BlockConfig): BlockRepresentation[] {
+export interface DayBlock {
+  block: number;
+  totalBlocks: number;
+  blockLabel: string;
+  blockStartMinute: number;
+  subBlocks: { subBlock: number; label: string; startMinute: number }[];
+}
+
+export function generateDayBlocks(config: BlockConfig): DayBlock[] {
   const total = totalBlocks(config.blockMinutes);
-  const blocks: BlockRepresentation[] = [];
+  const subs = subBlocksPerBlock(config);
+  const blocks: DayBlock[] = [];
   for (let i = 0; i < total; i++) {
-    const absStart = (config.startMinute + i * config.blockMinutes) % MINUTES_IN_DAY;
+    const blockStart = i * config.blockMinutes;
+    const subBlockList = [];
+    for (let j = 0; j < subs; j++) {
+      const subStart = blockStart + j * config.subBlockMinutes;
+      if (subStart >= MINUTES_IN_DAY) break;
+      subBlockList.push({ subBlock: j + 1, label: formatMin(subStart), startMinute: subStart });
+    }
     blocks.push({
-      globalBlock: i + 1,
+      block: i + 1,
       totalBlocks: total,
-      blockLabel: formatMinute(absStart),
-      blockStartMinute: absStart,
+      blockLabel: formatMin(blockStart),
+      blockStartMinute: blockStart,
+      subBlocks: subBlockList,
     });
   }
   return blocks;
-}
-
-/** Minutes elapsed within the current block. */
-export function minutesInBlock(date: Date, config: BlockConfig): number {
-  const minuteOfDay = date.getHours() * 60 + date.getMinutes();
-  const offset = ((minuteOfDay - config.startMinute) % MINUTES_IN_DAY + MINUTES_IN_DAY) % MINUTES_IN_DAY;
-  return offset % config.blockMinutes;
-}
-
-/** Check if a block falls within the awake window (startMinute of day to endMinute of day). */
-export function isAwake(block: BlockRepresentation, awakeStart: number, awakeEnd: number): boolean {
-  const blockStart = block.blockStartMinute;
-  if (awakeStart <= awakeEnd) {
-    // Normal range, e.g. 7:00–23:00
-    return blockStart >= awakeStart && blockStart < awakeEnd;
-  }
-  // Wraps midnight, e.g. 22:00–6:00
-  return blockStart >= awakeStart || blockStart < awakeEnd;
 }

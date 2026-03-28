@@ -1,32 +1,35 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { dateToBlock, blockProgress, generateDayBlocks, totalBlocks } from '../timeFormatter';
+import { dateToBlock, subBlockProgress, generateDayBlocks, totalBlocks, subBlocksPerBlock } from '../timeFormatter';
 import type { BlockConfig } from '../timeFormatter';
 
-const blockMinutesArb = fc.constantFrom(15, 30, 45, 60, 90, 120, 180, 240);
-const startMinuteArb = fc.integer({ min: 0, max: 1439 });
-const configArb = fc.record({ blockMinutes: blockMinutesArb, startMinute: startMinuteArb });
+const configArb = fc.record({
+  blockMinutes: fc.constantFrom(30, 60, 90, 120),
+  subBlockMinutes: fc.constantFrom(5, 10, 15, 30),
+}).filter(c => c.subBlockMinutes <= c.blockMinutes);
 
-describe('Property 1: Block mapping invariant', () => {
-  it('dateToBlock returns globalBlock in [1, totalBlocks]', () => {
+describe('Block mapping', () => {
+  it('dateToBlock returns valid block and subBlock', () => {
     fc.assert(
       fc.property(fc.date(), configArb, (date, config) => {
         const r = dateToBlock(date, config);
-        const total = totalBlocks(config.blockMinutes);
-        expect(r.globalBlock).toBeGreaterThanOrEqual(1);
-        expect(r.globalBlock).toBeLessThanOrEqual(total);
-        expect(r.totalBlocks).toBe(total);
+        expect(r.block).toBeGreaterThanOrEqual(1);
+        expect(r.block).toBeLessThanOrEqual(r.totalBlocks);
+        expect(r.subBlock).toBeGreaterThanOrEqual(1);
+        expect(r.subBlock).toBeLessThanOrEqual(r.subBlocksPerBlock);
+        expect(r.minutesInSubBlock).toBeGreaterThanOrEqual(0);
+        expect(r.minutesInSubBlock).toBeLessThan(config.subBlockMinutes);
       }),
       { numRuns: 200 },
     );
   });
 });
 
-describe('Property 4: Progress within valid range', () => {
-  it('blockProgress returns [0, 100]', () => {
+describe('Sub-block progress', () => {
+  it('returns [0, 100]', () => {
     fc.assert(
       fc.property(fc.date(), configArb, (date, config) => {
-        const p = blockProgress(date, config);
+        const p = subBlockProgress(date, config);
         expect(p).toBeGreaterThanOrEqual(0);
         expect(p).toBeLessThanOrEqual(100);
       }),
@@ -35,14 +38,16 @@ describe('Property 4: Progress within valid range', () => {
   });
 });
 
-describe('Property 5: Day overview completeness', () => {
-  it('generateDayBlocks returns totalBlocks items with sequential globalBlock', () => {
+describe('Day blocks', () => {
+  it('generates correct total with sub-blocks', () => {
     fc.assert(
       fc.property(configArb, (config) => {
         const blocks = generateDayBlocks(config);
-        const total = totalBlocks(config.blockMinutes);
-        expect(blocks).toHaveLength(total);
-        blocks.forEach((b, i) => expect(b.globalBlock).toBe(i + 1));
+        expect(blocks).toHaveLength(totalBlocks(config.blockMinutes));
+        for (const b of blocks) {
+          expect(b.subBlocks.length).toBeGreaterThanOrEqual(1);
+          expect(b.subBlocks.length).toBeLessThanOrEqual(subBlocksPerBlock(config));
+        }
       }),
       { numRuns: 200 },
     );

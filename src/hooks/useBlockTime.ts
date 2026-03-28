@@ -1,32 +1,30 @@
 import { useState, useEffect } from 'react';
-import { dateToBlock, blockProgress, minutesInBlock } from '../lib/timeFormatter';
-import type { BlockRepresentation, BlockConfig } from '../lib/timeFormatter';
+import { dateToBlock, subBlockProgress } from '../lib/timeFormatter';
+import type { BlockState, BlockConfig } from '../lib/timeFormatter';
 
 interface BlockTimeState {
-  currentBlock: BlockRepresentation;
+  current: BlockState;
   progress: number;
-  minutesElapsed: number;
   currentDate: Date;
 }
 
-function computeState(config: BlockConfig): BlockTimeState {
+function compute(config: BlockConfig): BlockTimeState {
   const now = new Date();
   return {
-    currentBlock: dateToBlock(now, config),
-    progress: blockProgress(now, config),
-    minutesElapsed: minutesInBlock(now, config),
+    current: dateToBlock(now, config),
+    progress: subBlockProgress(now, config),
     currentDate: now,
   };
 }
 
 export function useBlockTime(config: BlockConfig): BlockTimeState {
-  const [state, setState] = useState<BlockTimeState>(() => computeState(config));
+  const [state, setState] = useState<BlockTimeState>(() => compute(config));
 
   useEffect(() => {
-    setState(computeState(config));
-    const id = setInterval(() => setState(computeState(config)), 1000);
+    setState(compute(config));
+    const id = setInterval(() => setState(compute(config)), 1000);
     return () => clearInterval(id);
-  }, [config.blockMinutes, config.startMinute]);
+  }, [config.blockMinutes, config.subBlockMinutes]);
 
   return state;
 }
