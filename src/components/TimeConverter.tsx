@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { hexToSeconds, formatUTC, dateToHex } from '../lib/timeFormatter';
+import { hexToSeconds, formatTime, dateToHex } from '../lib/timeFormatter';
 
 const inputSx = {
   '& .MuiInputLabel-root': { color: 'rgba(124, 77, 255, 0.7)' },
@@ -26,7 +26,7 @@ export function TimeConverter() {
     setSource('hex');
     if (value.length === 3) {
       const sec = hexToSeconds(value);
-      if (sec !== null) { setUtcInput(formatUTC(sec)); return; }
+      if (sec !== null) { setUtcInput(formatTime(sec)); return; }
     }
     if (value === '') setUtcInput('');
   }
@@ -40,7 +40,7 @@ export function TimeConverter() {
       const m = parseInt(match[2], 10);
       const s = match[3] ? parseInt(match[3], 10) : 0;
       if (h < 24 && m < 60 && s < 60) {
-        const d = new Date(Date.UTC(2024, 0, 1, h, m, s));
+        const d = new Date(2024, 0, 1, h, m, s);
         setHexInput(dateToHex(d).hex);
         return;
       }
@@ -72,7 +72,7 @@ export function TimeConverter() {
         <Typography sx={{ color: 'rgba(124, 77, 255, 0.4)', fontSize: '1.2rem', mt: -0.5 }}>⇄</Typography>
         <Box sx={{ flex: 1 }}>
           <TextField
-            label="UTC (H:MM:SS)"
+            label="Local (H:MM:SS)"
             size="small"
             fullWidth
             value={utcInput}

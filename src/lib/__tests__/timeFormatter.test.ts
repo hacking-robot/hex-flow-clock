@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { dateToHex, hexToSeconds, formatUTC, generateBlocks } from '../timeFormatter';
+import { dateToHex, hexToSeconds, formatTime, generateBlocks } from '../timeFormatter';
 
 describe('dateToHex', () => {
   it('returns block, sub, tick in [0,15] for any Date', () => {
@@ -43,10 +43,10 @@ describe('hexToSeconds round-trip', () => {
         const sec = hexToSeconds(hex.hex);
         expect(sec).not.toBeNull();
         // The returned seconds should be the start of that tick
-        const utcSec = date.getUTCHours() * 3600 + date.getUTCMinutes() * 60 + date.getUTCSeconds();
-        // sec should be <= utcSec and within one tick (~21s)
-        expect(sec!).toBeLessThanOrEqual(utcSec + 1);
-        expect(utcSec - sec!).toBeLessThan(22);
+        const localSec = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+        // sec should be <= localSec and within one tick (~21s)
+        expect(sec!).toBeLessThanOrEqual(localSec + 1);
+        expect(localSec - sec!).toBeLessThan(22);
       }),
       { numRuns: 200 },
     );

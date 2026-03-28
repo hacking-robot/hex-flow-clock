@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { formatUTC, type HexTime } from '../lib/timeFormatter';
+import { formatTime, type HexTime } from '../lib/timeFormatter';
 
 const HEX = '0123456789ABCDEF';
 
@@ -12,8 +12,8 @@ interface Props {
 }
 
 export function ConversionExplainer({ current, currentDate }: Props) {
-  const utcSec = currentDate.getUTCHours() * 3600 + currentDate.getUTCMinutes() * 60 + currentDate.getUTCSeconds();
-  const utcStr = formatUTC(utcSec);
+  const localSec = currentDate.getHours() * 3600 + currentDate.getMinutes() * 60 + currentDate.getSeconds();
+  const timeStr = formatTime(localSec);
 
   const steps = [
     { label: 'Block', value: HEX[current.block], desc: '90 min', color: '#7C4DFF' },
@@ -26,10 +26,10 @@ export function ConversionExplainer({ current, currentDate }: Props) {
       {/* UTC source */}
       <Box sx={{ textAlign: 'center', mb: 2.5 }}>
         <Typography sx={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', textTransform: 'uppercase', mb: 0.5 }}>
-          UTC Time
+          Local Time
         </Typography>
         <Typography sx={{ ...mono, fontSize: '1.4rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
-          {utcStr}
+          {timeStr}
         </Typography>
       </Box>
 

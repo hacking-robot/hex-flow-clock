@@ -1,12 +1,15 @@
 /**
  * Hexadecimal time system.
  *
- * A day (UTC) is divided into 16 blocks of 90 minutes,
+ * A day (local time) is divided into 16 blocks of 90 minutes,
  * each block into 16 sub-blocks (~5.625 min),
  * each sub-block into 16 ticks (~21.09 sec).
  *
  * Time is represented as 3 hex digits: B.S.T (e.g. "1A2")
  * where B, S, T are each 0–F.
+ *
+ * Uses local time so blocks align with your actual day and
+ * DST is handled automatically by the browser.
  */
 
 const SECONDS_IN_DAY = 86400;
@@ -24,10 +27,10 @@ export interface HexTime {
   tickProgress: number; // 0–100 within current tick
 }
 
-/** Convert a Date (uses UTC) to HexTime. */
+/** Convert a Date (uses local time) to HexTime. */
 export function dateToHex(date: Date): HexTime {
-  const secOfDay = date.getUTCHours() * 3600 + date.getUTCMinutes() * 60 + date.getUTCSeconds();
-  const ms = date.getUTCMilliseconds();
+  const secOfDay = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+  const ms = date.getMilliseconds();
   const totalSec = secOfDay + ms / 1000;
 
   const block = Math.min(Math.floor(totalSec / BLOCK_SECONDS), 15);
@@ -45,7 +48,7 @@ export function dateToHex(date: Date): HexTime {
   };
 }
 
-/** Convert hex string (e.g. "1A2") back to UTC seconds of day. */
+/** Convert hex string (e.g. "1A2") back to local seconds of day. */
 export function hexToSeconds(hex: string): number | null {
   if (hex.length !== 3) return null;
   const b = HEX.indexOf(hex[0].toUpperCase());
@@ -55,8 +58,8 @@ export function hexToSeconds(hex: string): number | null {
   return b * BLOCK_SECONDS + s * SUB_SECONDS + t * TICK_SECONDS;
 }
 
-/** Format UTC seconds as H:MM:SS. */
-export function formatUTC(seconds: number): string {
+/** Format seconds of day as H:MM:SS. */
+export function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
@@ -64,10 +67,10 @@ export function formatUTC(seconds: number): string {
 }
 
 /** Generate all 16 blocks with their hex prefix. */
-export function generateBlocks(): { block: number; hex: string; startUTC: string }[] {
+export function generateBlocks(): { block: number; hex: string; startTime: string }[] {
   return Array.from({ length: 16 }, (_, i) => ({
     block: i,
     hex: HEX[i],
-    startUTC: formatUTC(i * BLOCK_SECONDS),
+    startTime: formatTime(i * BLOCK_SECONDS),
   }));
 }

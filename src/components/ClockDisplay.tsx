@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { ProgressIndicator } from './ProgressIndicator';
-import { formatUTC } from '../lib/timeFormatter';
+import { formatTime } from '../lib/timeFormatter';
 import type { HexTime } from '../lib/timeFormatter';
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function ClockDisplay({ current, currentDate, showUTC }: Props) {
-  const utcSec = currentDate.getUTCHours() * 3600 + currentDate.getUTCMinutes() * 60 + currentDate.getUTCSeconds();
+  const localSec = currentDate.getHours() * 3600 + currentDate.getMinutes() * 60 + currentDate.getSeconds();
 
   return (
     <Box sx={{ textAlign: 'center', position: 'relative' }}>
@@ -50,12 +50,12 @@ export function ClockDisplay({ current, currentDate, showUTC }: Props) {
             fontSize: '0.7rem',
           }}
         >
-          UTC {formatUTC(utcSec)}
+          {formatTime(localSec)}
         </Typography>
       )}
 
       <Box aria-live="polite" sx={{ position: 'absolute', left: -9999, width: 1, height: 1, overflow: 'hidden' }}>
-        Hex time {current.hex}, UTC {formatUTC(utcSec)}
+        Hex time {current.hex}, {formatTime(localSec)}
       </Box>
     </Box>
   );

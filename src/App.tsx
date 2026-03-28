@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import Collapse from '@mui/material/Collapse';
 import { useHexTime } from './hooks/useBlockTime';
 import { ClockDisplay } from './components/ClockDisplay';
@@ -54,7 +55,24 @@ export default function App() {
       >
         <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 8 }, px: { xs: 2, sm: 3 }, position: 'relative' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: { xs: 3, sm: 5 } }}>
-            <Box sx={{ mt: { xs: 4, sm: 8 } }}>
+            <Typography
+              component="h1"
+              sx={{
+                fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+                fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                letterSpacing: '0.4em',
+                textTransform: 'uppercase',
+                background: 'linear-gradient(90deg, rgba(124, 77, 255, 0.3), rgba(0, 229, 255, 0.3))',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 600,
+                mt: { xs: 1, sm: 2 },
+              }}
+            >
+              Hexflow Clock
+            </Typography>
+            <Box sx={{ mt: { xs: 0, sm: 2 } }}>
               <ClockDisplay current={current} currentDate={currentDate} showUTC={showDetails} />
             </Box>
             <Box

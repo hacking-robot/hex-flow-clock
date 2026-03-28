@@ -45,7 +45,7 @@ export function DayOverview({ current }: Props) {
             return (
               <Tooltip
                 key={i}
-                title={`${HEX[i]} · ${block.startUTC}`}
+                title={`${HEX[i]} · ${block.startTime}`}
                 arrow
                 placement="top"
                 slotProps={{
@@ -109,7 +109,7 @@ export function DayOverview({ current }: Props) {
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, px: 1.5 }}>
           <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)' }}>
-            {blocks[0].startUTC}
+            {blocks[0].startTime}
           </Typography>
           <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)' }}>
             24:00
