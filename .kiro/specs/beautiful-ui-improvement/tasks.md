@@ -1,0 +1,42 @@
+# Tasks: Beautiful UI Improvement
+
+- [x] 1 Create dark-mode theme with vibrant color palette
+  - [x] 1.1 Replace the existing `createTheme` in `App.tsx` with a dark-mode theme defining `mode: 'dark'`, primary color (`#7C4DFF`), secondary color (`#00E5FF`), dark background (`#0a0a1a`), paper (`#1a1a2e`), and light text colors
+  - [x] 1.2 Define typography with `Inter`/`Roboto` sans-serif font stack for body text and `JetBrains Mono`/`Fira Code` monospace for h1, with consistent font sizing hierarchy across h1, body1, body2, and caption variants
+  - [x] 1.3 Set `shape.borderRadius` to 12 for global rounded corners
+- [x] 2 Apply gradient background and panel animations to App
+  - [x] 2.1 Add a CSS `linear-gradient` background to the root `Container` or `Box` in `App.tsx` that covers the full viewport (`minHeight: '100vh'`)
+  - [x] 2.2 Replace the conditional `{showDetails && (...)}` rendering with MUI `Collapse` component for smooth expand/collapse animation of the details panel
+  - [x] 2.3 Add a CSS transition to the toggle `IconButton` for animated state change (e.g., rotation or opacity transition)
+- [x] 3 Enhance ClockDisplay with glow effects and styled text
+  - [x] 3.1 Add a `textShadow` glow effect to the hex time `Typography` using the theme's primary or secondary color
+  - [x] 3.2 Ensure the hex time text color contrasts clearly against the gradient background
+  - [x] 3.3 Verify the UTC time uses `text.secondary` color for a muted, visually secondary appearance
+  - [x] 3.4 Preserve the existing `aria-live="polite"` screen-reader region and all ARIA attributes
+- [x] 4 Restyle ProgressIndicator with gradient fill and rounded ends
+  - [x] 4.1 Apply a CSS gradient `backgroundImage` to the `LinearProgress` bar using at least two theme colors
+  - [x] 4.2 Add `borderRadius` to both the track and bar elements for rounded ends
+  - [x] 4.3 Set the track background to a semi-transparent color (e.g., `rgba(255,255,255,0.1)`)
+  - [x] 4.4 Ensure the existing smooth transition on the bar is preserved
+- [x] 5 Enhance DayOverview grid with vivid colors and effects
+  - [x] 5.1 Update the `blockColor` function to use higher saturation values (>60%) for vivid HSL colors with smooth hue progression across all 16 blocks
+  - [x] 5.2 Increase `borderRadius` on block cells and add `boxShadow` for elevation
+  - [x] 5.3 Add a glowing border or elevated shadow to the current block cell that distinguishes it from past/future blocks
+  - [x] 5.4 Wrap the grid in a fade or slide-in animation that triggers when the details panel opens
+- [x] 6 Style TimeConverter to match dark theme
+  - [x] 6.1 Update `TextField` components with dark input backgrounds and light text via `sx` props or theme component overrides
+  - [x] 6.2 Apply accent-colored labels and focus indicators to input fields
+  - [x] 6.3 Style conversion result text in a visually distinct color (secondary accent) from input labels
+- [x] 7 Write unit tests for visual configurations
+  - [x] 7.1 Test that the theme has `mode: 'dark'` with expected primary, secondary, and background colors
+  - [x] 7.2 Test that the App root renders a gradient background covering the viewport
+  - [x] 7.3 Test that ClockDisplay hex time has a textShadow and uses monospace font
+  - [x] 7.4 Test that ProgressIndicator bar has gradient background and rounded ends
+  - [x] 7.5 Test that all existing ARIA labels, roles, and the `aria-live` region are preserved
+  - [x] 7.6 Test that App uses MUI Collapse for the details panel transition
+- [x] 8 Write property-based tests with fast-check
+  - [x] 8.1 Property test: For any block index and status, block cells have borderRadius > 0 and non-empty boxShadow (Property 1)
+  - [x] 8.2 Property test: For any current block index, the current block styling is visually distinct from past/future blocks (Property 2)
+  - [x] 8.3 Property test: For any adjacent block pair, hue increases monotonically with saturation > 60% (Property 3)
+  - [x] 8.4 Property test: For any pair of typography variants (h1 > body1 > caption), font sizes follow decreasing hierarchy (Property 4)
+  - [x] 8.5 Property test: For all theme text/background color pairs, contrast ratio meets WCAG AA thresholds (Property 5)

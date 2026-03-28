@@ -4,52 +4,83 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { hexToSeconds, formatUTC, dateToHex } from '../lib/timeFormatter';
 
+const inputSx = {
+  '& .MuiInputLabel-root': { color: 'rgba(124, 77, 255, 0.7)' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#7C4DFF' },
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    color: '#E0E0E0',
+    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.08)' },
+    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(124, 77, 255, 0.3)' },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#7C4DFF' },
+  },
+};
+
 export function TimeConverter() {
   const [hexInput, setHexInput] = useState('');
-  const [timeInput, setTimeInput] = useState('');
+  const [utcInput, setUtcInput] = useState('');
+  const [source, setSource] = useState<'hex' | 'utc' | null>(null);
 
-  // Hex → UTC
-  let hexResult = '';
-  if (hexInput.length === 3) {
-    const sec = hexToSeconds(hexInput);
-    if (sec !== null) hexResult = `UTC ${formatUTC(sec)}`;
+  function handleHexChange(value: string) {
+    setHexInput(value);
+    setSource('hex');
+    if (value.length === 3) {
+      const sec = hexToSeconds(value);
+      if (sec !== null) { setUtcInput(formatUTC(sec)); return; }
+    }
+    if (value === '') setUtcInput('');
   }
 
-  // UTC → Hex
-  let timeResult = '';
-  const match = timeInput.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-  if (match) {
-    const h = parseInt(match[1], 10);
-    const m = parseInt(match[2], 10);
-    const s = match[3] ? parseInt(match[3], 10) : 0;
-    if (h < 24 && m < 60 && s < 60) {
-      const d = new Date(Date.UTC(2024, 0, 1, h, m, s));
-      timeResult = dateToHex(d).hex;
+  function handleUtcChange(value: string) {
+    setUtcInput(value);
+    setSource('utc');
+    const match = value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (match) {
+      const h = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10);
+      const s = match[3] ? parseInt(match[3], 10) : 0;
+      if (h < 24 && m < 60 && s < 60) {
+        const d = new Date(Date.UTC(2024, 0, 1, h, m, s));
+        setHexInput(dateToHex(d).hex);
+        return;
+      }
     }
+    if (value === '') setHexInput('');
   }
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>Convert</Typography>
-      <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-        Enter hex time (e.g. 1A2) or UTC time (H:MM or H:MM:SS).
+      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5, color: 'rgba(255,255,255,0.9)' }}>
+        Convert
       </Typography>
-      <Box sx={{ display: 'flex', gap: 2 }}>
+      <Typography variant="caption" sx={{ mb: 2, display: 'block', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.02em' }}>
+        Type in either field to convert.
+      </Typography>
+      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
         <Box sx={{ flex: 1 }}>
-          <TextField label="Hex" size="small" fullWidth value={hexInput}
-            onChange={(e) => setHexInput(e.target.value)} placeholder="1A2"
-            inputProps={{ style: { fontFamily: 'monospace' } }} />
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', minHeight: 18 }}>
-            {hexResult}
-          </Typography>
+          <TextField
+            label="Hex"
+            size="small"
+            fullWidth
+            value={hexInput}
+            onChange={(e) => handleHexChange(e.target.value)}
+            placeholder="1A2"
+            inputProps={{ style: { fontFamily: '"JetBrains Mono", "Fira Code", monospace' } }}
+            sx={inputSx}
+          />
         </Box>
+        <Typography sx={{ color: 'rgba(124, 77, 255, 0.4)', fontSize: '1.2rem', mt: -0.5 }}>⇄</Typography>
         <Box sx={{ flex: 1 }}>
-          <TextField label="UTC (H:MM)" size="small" fullWidth value={timeInput}
-            onChange={(e) => setTimeInput(e.target.value)} placeholder="14:30" />
-          <Typography variant="caption" color="text.secondary"
-            sx={{ mt: 0.5, display: 'block', minHeight: 18, fontFamily: 'monospace' }}>
-            {timeResult}
-          </Typography>
+          <TextField
+            label="UTC (H:MM:SS)"
+            size="small"
+            fullWidth
+            value={utcInput}
+            onChange={(e) => handleUtcChange(e.target.value)}
+            placeholder="14:30:00"
+            inputProps={{ style: { fontFamily: '"JetBrains Mono", "Fira Code", monospace' } }}
+            sx={inputSx}
+          />
         </Box>
       </Box>
     </Box>
