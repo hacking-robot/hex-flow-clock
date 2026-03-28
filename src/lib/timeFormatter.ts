@@ -1,96 +1,73 @@
 /**
- * Core time-formatting logic for the Block Time Clock.
+ * Hexadecimal time system.
  *
- * Two-level system: blocks (default 90min) divided into sub-blocks (default 15min).
- * Day always starts at 0:00.
+ * A day (UTC) is divided into 16 blocks of 90 minutes,
+ * each block into 16 sub-blocks (~5.625 min),
+ * each sub-block into 16 ticks (~21.09 sec).
+ *
+ * Time is represented as 3 hex digits: B.S.T (e.g. "1A2")
+ * where B, S, T are each 0–F.
  */
 
-const MINUTES_IN_DAY = 1440;
+const SECONDS_IN_DAY = 86400;
+const BLOCK_SECONDS = SECONDS_IN_DAY / 16;       // 5400
+const SUB_SECONDS = BLOCK_SECONDS / 16;           // 337.5
+const TICK_SECONDS = SUB_SECONDS / 16;             // 21.09375
 
-export interface BlockConfig {
-  blockMinutes: number;   // e.g. 90
-  subBlockMinutes: number; // e.g. 15
+const HEX = '0123456789ABCDEF';
+
+export interface HexTime {
+  block: number;    // 0–15
+  sub: number;      // 0–15
+  tick: number;     // 0–15
+  hex: string;      // e.g. "1A2"
+  tickProgress: number; // 0–100 within current tick
 }
 
-export interface BlockState {
-  block: number;           // 1-based block index
-  subBlock: number;        // 1-based sub-block within block
-  totalBlocks: number;
-  subBlocksPerBlock: number;
-  blockStartMinute: number; // absolute minute of day
-  blockLabel: string;       // e.g. "13:30"
-  minutesInSubBlock: number;
-}
+/** Convert a Date (uses UTC) to HexTime. */
+export function dateToHex(date: Date): HexTime {
+  const secOfDay = date.getUTCHours() * 3600 + date.getUTCMinutes() * 60 + date.getUTCSeconds();
+  const ms = date.getUTCMilliseconds();
+  const totalSec = secOfDay + ms / 1000;
 
-function formatMin(m: number): string {
-  const h = Math.floor(m / 60);
-  const mm = m % 60;
-  return `${h}:${mm.toString().padStart(2, '0')}`;
-}
+  const block = Math.min(Math.floor(totalSec / BLOCK_SECONDS), 15);
+  const inBlock = totalSec - block * BLOCK_SECONDS;
+  const sub = Math.min(Math.floor(inBlock / SUB_SECONDS), 15);
+  const inSub = inBlock - sub * SUB_SECONDS;
+  const tick = Math.min(Math.floor(inSub / TICK_SECONDS), 15);
+  const inTick = inSub - tick * TICK_SECONDS;
+  const tickProgress = Math.min(100, (inTick / TICK_SECONDS) * 100);
 
-export function totalBlocks(blockMinutes: number): number {
-  return Math.ceil(MINUTES_IN_DAY / blockMinutes);
-}
-
-export function subBlocksPerBlock(config: BlockConfig): number {
-  return Math.ceil(config.blockMinutes / config.subBlockMinutes);
-}
-
-export function dateToBlock(date: Date, config: BlockConfig): BlockState {
-  const minuteOfDay = date.getHours() * 60 + date.getMinutes();
-  const total = totalBlocks(config.blockMinutes);
-  const subs = subBlocksPerBlock(config);
-  const block = Math.min(Math.floor(minuteOfDay / config.blockMinutes) + 1, total);
-  const blockStart = (block - 1) * config.blockMinutes;
-  const inBlock = minuteOfDay - blockStart;
-  const subBlock = Math.min(Math.floor(inBlock / config.subBlockMinutes) + 1, subs);
-  const subStart = blockStart + (subBlock - 1) * config.subBlockMinutes;
-  const minutesInSub = minuteOfDay - subStart;
   return {
-    block,
-    subBlock,
-    totalBlocks: total,
-    subBlocksPerBlock: subs,
-    blockStartMinute: blockStart,
-    blockLabel: formatMin(blockStart),
-    minutesInSubBlock: minutesInSub,
+    block, sub, tick,
+    hex: `${HEX[block]}${HEX[sub]}${HEX[tick]}`,
+    tickProgress,
   };
 }
 
-export function subBlockProgress(date: Date, config: BlockConfig): number {
-  const state = dateToBlock(date, config);
-  const elapsed = state.minutesInSubBlock * 60 + date.getSeconds();
-  const total = config.subBlockMinutes * 60;
-  return Math.min(100, Math.max(0, (elapsed / total) * 100));
+/** Convert hex string (e.g. "1A2") back to UTC seconds of day. */
+export function hexToSeconds(hex: string): number | null {
+  if (hex.length !== 3) return null;
+  const b = HEX.indexOf(hex[0].toUpperCase());
+  const s = HEX.indexOf(hex[1].toUpperCase());
+  const t = HEX.indexOf(hex[2].toUpperCase());
+  if (b < 0 || s < 0 || t < 0) return null;
+  return b * BLOCK_SECONDS + s * SUB_SECONDS + t * TICK_SECONDS;
 }
 
-export interface DayBlock {
-  block: number;
-  totalBlocks: number;
-  blockLabel: string;
-  blockStartMinute: number;
-  subBlocks: { subBlock: number; label: string; startMinute: number }[];
+/** Format UTC seconds as H:MM:SS. */
+export function formatUTC(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-export function generateDayBlocks(config: BlockConfig): DayBlock[] {
-  const total = totalBlocks(config.blockMinutes);
-  const subs = subBlocksPerBlock(config);
-  const blocks: DayBlock[] = [];
-  for (let i = 0; i < total; i++) {
-    const blockStart = i * config.blockMinutes;
-    const subBlockList = [];
-    for (let j = 0; j < subs; j++) {
-      const subStart = blockStart + j * config.subBlockMinutes;
-      if (subStart >= MINUTES_IN_DAY) break;
-      subBlockList.push({ subBlock: j + 1, label: formatMin(subStart), startMinute: subStart });
-    }
-    blocks.push({
-      block: i + 1,
-      totalBlocks: total,
-      blockLabel: formatMin(blockStart),
-      blockStartMinute: blockStart,
-      subBlocks: subBlockList,
-    });
-  }
-  return blocks;
+/** Generate all 16 blocks with their hex prefix. */
+export function generateBlocks(): { block: number; hex: string; startUTC: string }[] {
+  return Array.from({ length: 16 }, (_, i) => ({
+    block: i,
+    hex: HEX[i],
+    startUTC: formatUTC(i * BLOCK_SECONDS),
+  }));
 }

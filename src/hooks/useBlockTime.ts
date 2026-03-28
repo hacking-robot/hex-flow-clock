@@ -1,30 +1,25 @@
 import { useState, useEffect } from 'react';
-import { dateToBlock, subBlockProgress } from '../lib/timeFormatter';
-import type { BlockState, BlockConfig } from '../lib/timeFormatter';
+import { dateToHex } from '../lib/timeFormatter';
+import type { HexTime } from '../lib/timeFormatter';
 
-interface BlockTimeState {
-  current: BlockState;
-  progress: number;
+interface HexTimeState {
+  current: HexTime;
   currentDate: Date;
 }
 
-function compute(config: BlockConfig): BlockTimeState {
-  const now = new Date();
-  return {
-    current: dateToBlock(now, config),
-    progress: subBlockProgress(now, config),
-    currentDate: now,
-  };
-}
-
-export function useBlockTime(config: BlockConfig): BlockTimeState {
-  const [state, setState] = useState<BlockTimeState>(() => compute(config));
+export function useHexTime(): HexTimeState {
+  const [state, setState] = useState<HexTimeState>(() => {
+    const now = new Date();
+    return { current: dateToHex(now), currentDate: now };
+  });
 
   useEffect(() => {
-    setState(compute(config));
-    const id = setInterval(() => setState(compute(config)), 1000);
+    const id = setInterval(() => {
+      const now = new Date();
+      setState({ current: dateToHex(now), currentDate: now });
+    }, 1000);
     return () => clearInterval(id);
-  }, [config.blockMinutes, config.subBlockMinutes]);
+  }, []);
 
   return state;
 }

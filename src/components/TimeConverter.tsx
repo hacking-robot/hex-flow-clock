@@ -2,41 +2,29 @@ import { useState } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { totalBlocks, subBlocksPerBlock, type BlockConfig } from '../lib/timeFormatter';
+import { hexToSeconds, formatUTC, dateToHex } from '../lib/timeFormatter';
 
-interface Props { config: BlockConfig; }
-
-function fmt(m: number): string {
-  const h = Math.floor((m % 1440) / 60);
-  const mm = (m % 1440) % 60;
-  return `${h}:${mm.toString().padStart(2, '0')}`;
-}
-
-export function TimeConverter({ config }: Props) {
-  const [blockInput, setBlockInput] = useState('');
+export function TimeConverter() {
+  const [hexInput, setHexInput] = useState('');
   const [timeInput, setTimeInput] = useState('');
-  const total = totalBlocks(config.blockMinutes);
-  const subs = subBlocksPerBlock(config);
 
-  let blockResult = '';
-  const parts = blockInput.split('.');
-  const b = parseInt(parts[0], 10);
-  const s = parts.length > 1 ? parseInt(parts[1], 10) : 1;
-  if (b >= 1 && b <= total && s >= 1 && s <= subs) {
-    const start = (b - 1) * config.blockMinutes + (s - 1) * config.subBlockMinutes;
-    const end = start + config.subBlockMinutes;
-    blockResult = `${fmt(start)} – ${fmt(end)}`;
+  // Hex → UTC
+  let hexResult = '';
+  if (hexInput.length === 3) {
+    const sec = hexToSeconds(hexInput);
+    if (sec !== null) hexResult = `UTC ${formatUTC(sec)}`;
   }
 
+  // UTC → Hex
   let timeResult = '';
-  const match = timeInput.match(/^(\d{1,2}):(\d{2})$/);
+  const match = timeInput.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
   if (match) {
-    const mins = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-    if (mins >= 0 && mins < 1440) {
-      const block = Math.floor(mins / config.blockMinutes) + 1;
-      const inBlock = mins - (block - 1) * config.blockMinutes;
-      const sub = Math.floor(inBlock / config.subBlockMinutes) + 1;
-      timeResult = `Block ${block}.${sub}`;
+    const h = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    const s = match[3] ? parseInt(match[3], 10) : 0;
+    if (h < 24 && m < 60 && s < 60) {
+      const d = new Date(Date.UTC(2024, 0, 1, h, m, s));
+      timeResult = dateToHex(d).hex;
     }
   }
 
@@ -44,20 +32,22 @@ export function TimeConverter({ config }: Props) {
     <Box sx={{ width: '100%' }}>
       <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>Convert</Typography>
       <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-        Enter block.sub (e.g. 10.3) or time (H:MM).
+        Enter hex time (e.g. 1A2) or UTC time (H:MM or H:MM:SS).
       </Typography>
       <Box sx={{ display: 'flex', gap: 2 }}>
         <Box sx={{ flex: 1 }}>
-          <TextField label="Block.Sub" size="small" fullWidth value={blockInput}
-            onChange={(e) => setBlockInput(e.target.value)} placeholder="10.3" />
+          <TextField label="Hex" size="small" fullWidth value={hexInput}
+            onChange={(e) => setHexInput(e.target.value)} placeholder="1A2"
+            inputProps={{ style: { fontFamily: 'monospace' } }} />
           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', minHeight: 18 }}>
-            {blockResult}
+            {hexResult}
           </Typography>
         </Box>
         <Box sx={{ flex: 1 }}>
-          <TextField label="Time (H:MM)" size="small" fullWidth value={timeInput}
+          <TextField label="UTC (H:MM)" size="small" fullWidth value={timeInput}
             onChange={(e) => setTimeInput(e.target.value)} placeholder="14:30" />
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', minHeight: 18 }}>
+          <Typography variant="caption" color="text.secondary"
+            sx={{ mt: 0.5, display: 'block', minHeight: 18, fontFamily: 'monospace' }}>
             {timeResult}
           </Typography>
         </Box>

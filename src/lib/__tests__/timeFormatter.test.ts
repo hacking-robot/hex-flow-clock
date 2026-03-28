@@ -1,55 +1,60 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { dateToBlock, subBlockProgress, generateDayBlocks, totalBlocks, subBlocksPerBlock } from '../timeFormatter';
-import type { BlockConfig } from '../timeFormatter';
+import { dateToHex, hexToSeconds, formatUTC, generateBlocks } from '../timeFormatter';
 
-const configArb = fc.record({
-  blockMinutes: fc.constantFrom(30, 60, 90, 120),
-  subBlockMinutes: fc.constantFrom(5, 10, 15, 30),
-}).filter(c => c.subBlockMinutes <= c.blockMinutes);
-
-describe('Block mapping', () => {
-  it('dateToBlock returns valid block and subBlock', () => {
+describe('dateToHex', () => {
+  it('returns block, sub, tick in [0,15] for any Date', () => {
     fc.assert(
-      fc.property(fc.date(), configArb, (date, config) => {
-        const r = dateToBlock(date, config);
-        expect(r.block).toBeGreaterThanOrEqual(1);
-        expect(r.block).toBeLessThanOrEqual(r.totalBlocks);
-        expect(r.subBlock).toBeGreaterThanOrEqual(1);
-        expect(r.subBlock).toBeLessThanOrEqual(r.subBlocksPerBlock);
-        expect(r.minutesInSubBlock).toBeGreaterThanOrEqual(0);
-        expect(r.minutesInSubBlock).toBeLessThan(config.subBlockMinutes);
+      fc.property(fc.date(), (date) => {
+        const r = dateToHex(date);
+        expect(r.block).toBeGreaterThanOrEqual(0);
+        expect(r.block).toBeLessThanOrEqual(15);
+        expect(r.sub).toBeGreaterThanOrEqual(0);
+        expect(r.sub).toBeLessThanOrEqual(15);
+        expect(r.tick).toBeGreaterThanOrEqual(0);
+        expect(r.tick).toBeLessThanOrEqual(15);
+        expect(r.hex).toHaveLength(3);
+        expect(r.tickProgress).toBeGreaterThanOrEqual(0);
+        expect(r.tickProgress).toBeLessThanOrEqual(100);
+      }),
+      { numRuns: 500 },
+    );
+  });
+
+  it('hex string matches block/sub/tick values', () => {
+    fc.assert(
+      fc.property(fc.date(), (date) => {
+        const r = dateToHex(date);
+        const HEX = '0123456789ABCDEF';
+        expect(r.hex[0]).toBe(HEX[r.block]);
+        expect(r.hex[1]).toBe(HEX[r.sub]);
+        expect(r.hex[2]).toBe(HEX[r.tick]);
       }),
       { numRuns: 200 },
     );
   });
 });
 
-describe('Sub-block progress', () => {
-  it('returns [0, 100]', () => {
+describe('hexToSeconds round-trip', () => {
+  it('dateToHex then hexToSeconds lands in the same tick', () => {
     fc.assert(
-      fc.property(fc.date(), configArb, (date, config) => {
-        const p = subBlockProgress(date, config);
-        expect(p).toBeGreaterThanOrEqual(0);
-        expect(p).toBeLessThanOrEqual(100);
+      fc.property(fc.date(), (date) => {
+        const hex = dateToHex(date);
+        const sec = hexToSeconds(hex.hex);
+        expect(sec).not.toBeNull();
+        // The returned seconds should be the start of that tick
+        const utcSec = date.getUTCHours() * 3600 + date.getUTCMinutes() * 60 + date.getUTCSeconds();
+        // sec should be <= utcSec and within one tick (~21s)
+        expect(sec!).toBeLessThanOrEqual(utcSec + 1);
+        expect(utcSec - sec!).toBeLessThan(22);
       }),
       { numRuns: 200 },
     );
   });
 });
 
-describe('Day blocks', () => {
-  it('generates correct total with sub-blocks', () => {
-    fc.assert(
-      fc.property(configArb, (config) => {
-        const blocks = generateDayBlocks(config);
-        expect(blocks).toHaveLength(totalBlocks(config.blockMinutes));
-        for (const b of blocks) {
-          expect(b.subBlocks.length).toBeGreaterThanOrEqual(1);
-          expect(b.subBlocks.length).toBeLessThanOrEqual(subBlocksPerBlock(config));
-        }
-      }),
-      { numRuns: 200 },
-    );
+describe('generateBlocks', () => {
+  it('returns 16 blocks', () => {
+    expect(generateBlocks()).toHaveLength(16);
   });
 });
