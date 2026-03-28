@@ -17,7 +17,7 @@ export function useHexTime(): HexTimeState {
     const id = setInterval(() => {
       const now = new Date();
       setState({ current: dateToHex(now), currentDate: now });
-    }, 1000);
+    }, 100);
     return () => clearInterval(id);
   }, []);
 

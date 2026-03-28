@@ -7,9 +7,10 @@ import type { HexTime } from '../lib/timeFormatter';
 interface Props {
   current: HexTime;
   currentDate: Date;
+  showUTC?: boolean;
 }
 
-export function ClockDisplay({ current, currentDate }: Props) {
+export function ClockDisplay({ current, currentDate, showUTC }: Props) {
   const utcSec = currentDate.getUTCHours() * 3600 + currentDate.getUTCMinutes() * 60 + currentDate.getUTCSeconds();
 
   return (
@@ -22,9 +23,11 @@ export function ClockDisplay({ current, currentDate }: Props) {
         {current.hex}
       </Typography>
 
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-        UTC {formatUTC(utcSec)}
-      </Typography>
+      {showUTC && (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          UTC {formatUTC(utcSec)}
+        </Typography>
+      )}
 
       <Box sx={{ mt: 2, width: '100%', maxWidth: 300 }}>
         <ProgressIndicator progress={current.tickProgress} />

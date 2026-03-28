@@ -13,6 +13,7 @@ export function ProgressIndicator({ progress }: ProgressIndicatorProps) {
       aria-valuenow={progress}
       aria-valuemin={0}
       aria-valuemax={100}
+      sx={{ '& .MuiLinearProgress-bar': { transition: 'transform 0.1s linear' } }}
     />
   );
 }
