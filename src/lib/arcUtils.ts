@@ -83,8 +83,6 @@ export function hexTimeToArcs(
 ): { block: ArcPath; sub: ArcPath; tick: ArcPath } {
   const START_ANGLE = -90; // 12 o'clock position
 
-  // Block and sub show their exact digit value (snap to position).
-  // Only the tick ring interpolates smoothly via tickProgress.
   const blockSweep = (current.block / 16) * 360;
   const subSweep = (current.sub / 16) * 360;
   const tickSweep = ((current.tick + current.tickProgress / 100) / 16) * 360;

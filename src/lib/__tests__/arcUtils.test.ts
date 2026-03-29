@@ -30,7 +30,7 @@ describe('Feature: clock-view-toggle, Property 2: Arc sweep angles match hex tim
   /**
    * **Validates: Requirements 2.2, 2.3, 2.4, 3.1**
    *
-   * Block and sub snap to their digit value. Tick interpolates via tickProgress:
+   * Block and sub snap to digit value. Tick interpolates via tickProgress:
    *   Block sweep = (block / 16) * 360
    *   Sub sweep   = (sub / 16) * 360
    *   Tick sweep  = ((tick + tickProgress/100) / 16) * 360
@@ -38,7 +38,7 @@ describe('Feature: clock-view-toggle, Property 2: Arc sweep angles match hex tim
   it('should produce sweep angles matching the design formulas for all valid HexTime inputs', () => {
     const cx = 180;
     const cy = 180;
-    const radii = { block: 160, sub: 130, tick: 100 };
+    const radii = { block: 160, sub: 130, tick: 40 };
     const START_ANGLE = -90;
 
     fc.assert(

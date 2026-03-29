@@ -41,14 +41,11 @@ describe('App view integration', () => {
   it('defaults to numerical view on initial load', () => {
     render(<App />);
 
-    // Numerical ClockDisplay renders a progressbar (unique to numerical view)
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    // Numerical ClockDisplay renders the hex time as text
+    expect(screen.getAllByText('5A3').length).toBeGreaterThan(0);
 
     // CircularClockDisplay renders an SVG with role="img" — should NOT be present
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
-
-    // The hex time text should be visible somewhere in the document
-    expect(screen.getAllByText('5A3').length).toBeGreaterThan(0);
   });
 
   /**
@@ -62,9 +59,6 @@ describe('App view integration', () => {
 
     // CircularClockDisplay should now be visible (SVG with role="img")
     expect(screen.getByRole('img')).toBeInTheDocument();
-
-    // The numerical progress bar should be gone
-    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
   /**
@@ -81,8 +75,7 @@ describe('App view integration', () => {
     // Toggle back to numerical
     clickInactiveToggle();
 
-    // Numerical view should be back with the progressbar
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    // Numerical view should be back
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
 
     // Hex time text still present

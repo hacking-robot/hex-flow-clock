@@ -11,8 +11,9 @@ describe('ClockDisplay', () => {
     expect(screen.getByText('1A2')).toBeInTheDocument();
   });
 
-  it('renders progress bar', () => {
-    render(<ClockDisplay current={current} currentDate={date} />);
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+  it('renders rectangular progress border', () => {
+    const { container } = render(<ClockDisplay current={current} currentDate={date} />);
+    const rects = container.querySelectorAll('svg path');
+    expect(rects.length).toBeGreaterThanOrEqual(2); // background + progress path
   });
 });

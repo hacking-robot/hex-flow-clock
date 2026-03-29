@@ -46,7 +46,7 @@ function renderWithTheme(current: HexTime) {
  * Property 3: SVG renders four concentric track rings
  * **Validates: Requirements 2.1**
  */
-describe('Feature: clock-view-toggle, Property 3: SVG renders three track rings', () => {
+describe('Feature: clock-view-toggle, Property 3: SVG renders track rings', () => {
   it('renders three background circle tracks for any valid HexTime', () => {
     fc.assert(
       fc.property(hexTimeArb, (current) => {
