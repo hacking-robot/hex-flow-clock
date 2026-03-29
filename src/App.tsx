@@ -7,9 +7,13 @@ import Typography from '@mui/material/Typography';
 import Collapse from '@mui/material/Collapse';
 import { useHexTime } from './hooks/useBlockTime';
 import { ClockDisplay } from './components/ClockDisplay';
+import { CircularClockDisplay } from './components/CircularClockDisplay';
+import { ViewToggle } from './components/ViewToggle';
 import { DayOverview } from './components/DayOverview';
 import { ConversionExplainer } from './components/ConversionExplainer';
 import { TimeConverter } from './components/TimeConverter';
+
+export type ClockViewMode = 'numerical' | 'circular';
 
 const theme = createTheme({
   palette: {
@@ -32,6 +36,11 @@ const theme = createTheme({
 export default function App() {
   const { current, currentDate } = useHexTime();
   const [showDetails, setShowDetails] = useState(false);
+  const [activeView, setActiveView] = useState<ClockViewMode>('numerical');
+
+  const handleToggleView = () => {
+    setActiveView((prev) => (prev === 'numerical' ? 'circular' : 'numerical'));
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -72,8 +81,13 @@ export default function App() {
             >
               Hexflow Clock
             </Typography>
+            <ViewToggle activeView={activeView} onToggle={handleToggleView} />
             <Box sx={{ mt: { xs: 0, sm: 2 } }}>
-              <ClockDisplay current={current} currentDate={currentDate} showUTC={showDetails} />
+              {activeView === 'numerical' ? (
+                <ClockDisplay current={current} currentDate={currentDate} showUTC={showDetails} />
+              ) : (
+                <CircularClockDisplay current={current} currentDate={currentDate} />
+              )}
             </Box>
             <Box
               onClick={() => setShowDetails((v) => !v)}
